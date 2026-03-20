@@ -18,44 +18,48 @@ export interface MenuWithChildren extends Menu {
 }
 
 // 获取所有菜单（扁平结构）
-export async function findAll(): Promise<Menu[]> {
+export async function findAll(): Promise<(Menu & { app_icon?: string })[]> {
   const sql = `
-    SELECT id, name, path, icon, parent_id, sort_order, status, app_id, created_at, updated_at
-    FROM pioc_menus
-    WHERE status = 1
-    ORDER BY sort_order ASC, id ASC
+    SELECT m.id, m.name, m.path, m.icon, m.parent_id, m.sort_order, m.status, m.app_id, m.created_at, m.updated_at, a.icon as app_icon
+    FROM pioc_menus m
+    LEFT JOIN pioc_apps a ON m.app_id = a.id
+    WHERE m.status = 1
+    ORDER BY m.sort_order ASC, m.id ASC
   `;
-  return query<Menu[]>(sql);
+  return query<(Menu & { app_icon?: string })[]>(sql);
 }
 
 // 获取所有菜单（包括禁用的）
-export async function findAllWithDisabled(): Promise<Menu[]> {
+export async function findAllWithDisabled(): Promise<(Menu & { app_icon?: string })[]> {
   const sql = `
-    SELECT id, name, path, icon, parent_id, sort_order, status, app_id, created_at, updated_at
-    FROM pioc_menus
-    ORDER BY sort_order ASC, id ASC
+    SELECT m.id, m.name, m.path, m.icon, m.parent_id, m.sort_order, m.status, m.app_id, m.created_at, m.updated_at, a.icon as app_icon
+    FROM pioc_menus m
+    LEFT JOIN pioc_apps a ON m.app_id = a.id
+    ORDER BY m.sort_order ASC, m.id ASC
   `;
-  return query<Menu[]>(sql);
+  return query<(Menu & { app_icon?: string })[]>(sql);
 }
 
 // 根据ID获取菜单
-export async function findById(id: number): Promise<Menu | null> {
+export async function findById(id: number): Promise<(Menu & { app_icon?: string }) | null> {
   const sql = `
-    SELECT id, name, path, icon, parent_id, sort_order, status, app_id, created_at, updated_at
-    FROM pioc_menus
-    WHERE id = ?
+    SELECT m.id, m.name, m.path, m.icon, m.parent_id, m.sort_order, m.status, m.app_id, m.created_at, m.updated_at, a.icon as app_icon
+    FROM pioc_menus m
+    LEFT JOIN pioc_apps a ON m.app_id = a.id
+    WHERE m.id = ?
   `;
-  const results = await query<Menu[]>(sql, [id]);
+  const results = await query<(Menu & { app_icon?: string })[]>(sql, [id]);
   return results.length > 0 ? results[0] : null;
 }
 
 // 根据父ID获取子菜单
-export async function findByParentId(parentId: number | null): Promise<Menu[]> {
+export async function findByParentId(parentId: number | null): Promise<(Menu & { app_icon?: string })[]> {
   const sql = `
-    SELECT id, name, path, icon, parent_id, sort_order, status, app_id, created_at, updated_at
-    FROM pioc_menus
-    WHERE parent_id ${parentId === null ? 'IS NULL' : '= ?'} AND status = 1
-    ORDER BY sort_order ASC, id ASC
+    SELECT m.id, m.name, m.path, m.icon, m.parent_id, m.sort_order, m.status, m.app_id, m.created_at, m.updated_at, a.icon as app_icon
+    FROM pioc_menus m
+    LEFT JOIN pioc_apps a ON m.app_id = a.id
+    WHERE m.parent_id ${parentId === null ? 'IS NULL' : '= ?'} AND m.status = 1
+    ORDER BY m.sort_order ASC, m.id ASC
   `;
   const params = parentId === null ? [] : [parentId];
   return query<Menu[]>(sql, params);
@@ -204,15 +208,15 @@ export function buildTree(menus: Menu[]): MenuWithChildren[] {
 }
 
 // 获取树形结构的菜单
-export async function findTree(): Promise<MenuWithChildren[]> {
+export async function findTree(): Promise<(MenuWithChildren & { app_icon?: string })[]> {
   const menus = await findAll();
-  return buildTree(menus);
+  return buildTree(menus) as (MenuWithChildren & { app_icon?: string })[];
 }
 
 // 获取树形结构的菜单（包括禁用的）
-export async function findTreeWithDisabled(): Promise<MenuWithChildren[]> {
+export async function findTreeWithDisabled(): Promise<(MenuWithChildren & { app_icon?: string })[]> {
   const menus = await findAllWithDisabled();
-  return buildTree(menus);
+  return buildTree(menus) as (MenuWithChildren & { app_icon?: string })[];
 }
 
 // 检查菜单名称是否已存在（同级）

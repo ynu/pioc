@@ -52,6 +52,7 @@ interface Menu {
   sort_order: number;
   status: number;
   app_id?: number | null;
+  app_icon?: string;
   created_at: string;
   children?: Menu[];
 }
@@ -292,10 +293,12 @@ export default function MenusPage() {
     }
   };
 
-  const getIcon = (iconName?: string, isApp?: boolean) => {
-    if (isApp) {
-      return <LinkOutlined />;
+  const getIcon = (iconName?: string, appIconName?: string) => {
+    // 如果有应用图标，优先使用应用图标
+    if (appIconName) {
+      return iconMapping[appIconName] || <LinkOutlined />;
     }
+    // 否则使用菜单图标
     return iconName ? iconMapping[iconName] || <MenuOutlined /> : <FolderOutlined />;
   };
 
@@ -318,11 +321,8 @@ export default function MenusPage() {
       key: 'name',
       render: (name: string, record) => (
         <Space key={`name-${record.key}`}>
-          {getIcon(record.icon, !!record.app_id)}
+          {getIcon(record.icon, record.app_icon)}
           <span>{name}</span>
-          {record.app_id && (
-            <Tag color="blue" icon={<LinkOutlined />}>应用</Tag>
-          )}
           {isBuiltinMenu(record.id) && (
             <Tooltip title="内置菜单，不允许删除">
               <Tag icon={<LockOutlined />} color="orange">内置</Tag>
@@ -342,16 +342,6 @@ export default function MenusPage() {
           {appId ? '应用' : '菜单组'}
         </Tag>
       ),
-    },
-    {
-      title: '关联应用',
-      dataIndex: 'app_id',
-      key: 'app_id',
-      render: (appId: number | null) => {
-        if (!appId) return '-';
-        const app = apps.find(a => a.id === appId);
-        return app ? <Tag>{app.name}</Tag> : '-';
-      },
     },
     {
       title: '排序',
