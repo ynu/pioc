@@ -1,0 +1,224 @@
+import { getPool } from './connection';
+import bcrypt from 'bcryptjs';
+import mysql from 'mysql2/promise';
+
+const initSQL = `
+-- 创建用户表
+CREATE TABLE IF NOT EXISTS pioc_users (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  username VARCHAR(50) NOT NULL UNIQUE,
+  email VARCHAR(100) NOT NULL UNIQUE,
+  password VARCHAR(255) NOT NULL,
+  name VARCHAR(100),
+  status TINYINT DEFAULT 1 COMMENT '1-启用，0-禁用',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_username (username),
+  INDEX idx_email (email),
+  INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 创建角色表
+CREATE TABLE IF NOT EXISTS pioc_roles (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(50) NOT NULL UNIQUE,
+  description VARCHAR(255),
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_name (name)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 创建用户角色关联表
+CREATE TABLE IF NOT EXISTS pioc_user_roles (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  role_id INT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_user_role (user_id, role_id),
+  INDEX idx_user_id (user_id),
+  INDEX idx_role_id (role_id),
+  FOREIGN KEY (user_id) REFERENCES pioc_users(id) ON DELETE CASCADE,
+  FOREIGN KEY (role_id) REFERENCES pioc_roles(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 创建应用表
+CREATE TABLE IF NOT EXISTS pioc_apps (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(50) NOT NULL UNIQUE,
+  description VARCHAR(255),
+  icon VARCHAR(100),
+  url VARCHAR(255),
+  status TINYINT DEFAULT 1 COMMENT '1-启用，0-禁用',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_name (name),
+  INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 创建角色应用关联表
+CREATE TABLE IF NOT EXISTS pioc_role_apps (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  role_id INT NOT NULL,
+  app_id INT NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE KEY uk_role_app (role_id, app_id),
+  INDEX idx_role_id (role_id),
+  INDEX idx_app_id (app_id),
+  FOREIGN KEY (role_id) REFERENCES pioc_roles(id) ON DELETE CASCADE,
+  FOREIGN KEY (app_id) REFERENCES pioc_apps(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 创建会话表
+CREATE TABLE IF NOT EXISTS pioc_sessions (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  user_id INT NOT NULL,
+  token VARCHAR(500) NOT NULL UNIQUE,
+  expires_at TIMESTAMP NOT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  INDEX idx_user_id (user_id),
+  INDEX idx_token (token(255)),
+  INDEX idx_expires_at (expires_at),
+  FOREIGN KEY (user_id) REFERENCES pioc_users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 创建菜单表
+CREATE TABLE IF NOT EXISTS pioc_menus (
+  id INT AUTO_INCREMENT PRIMARY KEY,
+  name VARCHAR(50) NOT NULL,
+  path VARCHAR(255) NOT NULL DEFAULT '',
+  icon VARCHAR(100),
+  parent_id INT DEFAULT NULL,
+  sort_order INT DEFAULT 0,
+  status TINYINT DEFAULT 1 COMMENT '1-启用，0-禁用',
+  app_id INT DEFAULT NULL,
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_parent_id (parent_id),
+  INDEX idx_status (status),
+  INDEX idx_sort_order (sort_order),
+  INDEX idx_app_id (app_id),
+  FOREIGN KEY (parent_id) REFERENCES pioc_menus(id) ON DELETE CASCADE,
+  FOREIGN KEY (app_id) REFERENCES pioc_apps(id) ON DELETE SET NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 插入默认角色
+INSERT IGNORE INTO pioc_roles (id, name, description) VALUES
+  (1, 'admin', '系统管理员'),
+  (2, 'user', '普通用户'),
+  (3, 'guest', '访客');
+
+-- 插入内置应用（用户管理、角色管理、应用管理）
+INSERT IGNORE INTO pioc_apps (id, name, description, icon, url, status) VALUES
+  (1, '用户管理', '管理系统用户，包括用户的增删改查和角色分配', 'UserOutlined', '/users', 1),
+  (2, '角色管理', '管理系统角色，包括角色的增删改查、用户分配和应用权限分配', 'TeamOutlined', '/roles', 1),
+  (3, '应用管理', '管理系统应用，包括应用的增删改查和权限控制', 'AppstoreOutlined', '/apps', 1),
+  (4, '菜单管理', '管理系统顶部导航菜单，支持多级菜单配置', 'MenuOutlined', '/menus', 1);
+
+-- 插入默认菜单
+INSERT IGNORE INTO pioc_menus (id, name, path, icon, parent_id, sort_order, status, app_id) VALUES
+  (1, '控制台', '/dashboard', 'HomeOutlined', NULL, 1, 1, NULL),
+  (2, '管理', '', 'DatabaseOutlined', NULL, 2, 1, NULL),
+  (3, '用户管理', '/users', 'UserOutlined', 2, 1, 1, 1),
+  (4, '角色管理', '/roles', 'TeamOutlined', 2, 2, 1, 2),
+  (5, '应用管理', '/apps', 'AppstoreOutlined', 2, 3, 1, 3),
+  (6, '菜单管理', '/menus', 'MenuOutlined', 2, 4, 1, 4);
+`;
+
+export async function initializeDatabase() {
+  const pool = getPool();
+  const connection = await pool.getConnection();
+  try {
+    const statements = initSQL.split(';').filter(s => s.trim());
+    for (const statement of statements) {
+      if (statement.trim()) {
+        await connection.execute(statement);
+      }
+    }
+
+    // 创建默认管理员账号
+    await createDefaultAdmin(connection);
+
+    // 为admin角色分配所有内置应用的权限
+    await assignDefaultAppPermissions(connection);
+
+    // 为admin角色分配菜单管理应用权限
+    await assignMenuAppPermission(connection);
+
+    console.log('Database initialized successfully');
+  } catch (error) {
+    console.error('Failed to initialize database:', error);
+    throw error;
+  } finally {
+    connection.release();
+  }
+}
+
+async function createDefaultAdmin(connection: mysql.PoolConnection) {
+  try {
+    // 检查是否已存在 admin 账号
+    const [existingAdmin] = await connection.execute(
+      'SELECT id FROM pioc_users WHERE username = ?',
+      ['admin']
+    );
+
+    if (existingAdmin && existingAdmin.length > 0) {
+      console.log('Default admin account already exists');
+      return;
+    }
+
+    // 生成密码哈希
+    const hashedPassword = await bcrypt.hash('admin123', 10);
+
+    // 插入默认管理员账号
+    const [result] = await connection.execute(
+      'INSERT INTO pioc_users (username, email, password, name, status) VALUES (?, ?, ?, ?, ?)',
+      ['admin', 'admin@pioc.local', hashedPassword, '系统管理员', 1]
+    );
+
+    const adminUserId = result.insertId;
+
+    // 分配管理员角色 (role_id = 1 是 admin 角色)
+    await connection.execute(
+      'INSERT INTO pioc_user_roles (user_id, role_id) VALUES (?, ?)',
+      [adminUserId, 1]
+    );
+
+    console.log('Default admin account created successfully');
+  } catch (error) {
+    console.error('Failed to create default admin account:', error);
+    throw error;
+  }
+}
+
+async function assignDefaultAppPermissions(connection: mysql.PoolConnection) {
+  try {
+    // 为 admin 角色分配所有内置应用的权限（应用ID 1, 2, 3）
+    const builtinAppIds = [1, 2, 3];
+    for (const appId of builtinAppIds) {
+      await connection.execute(
+        'INSERT IGNORE INTO pioc_role_apps (role_id, app_id) VALUES (?, ?)',
+        [1, appId] // role_id = 1 是 admin 角色
+      );
+    }
+    console.log('Default app permissions assigned to admin role');
+  } catch (error) {
+    console.error('Failed to assign default app permissions:', error);
+    throw error;
+  }
+}
+
+async function assignMenuAppPermission(connection: mysql.PoolConnection) {
+  try {
+    // 为 admin 角色分配菜单管理应用权限（应用ID 4）
+    await connection.execute(
+      'INSERT IGNORE INTO pioc_role_apps (role_id, app_id) VALUES (?, ?)',
+      [1, 4] // role_id = 1 是 admin 角色, app_id = 4 是菜单管理
+    );
+    console.log('Menu app permission assigned to admin role');
+  } catch (error) {
+    console.error('Failed to assign menu app permission:', error);
+    throw error;
+  }
+}
+
+export default initializeDatabase;

@@ -1,0 +1,116 @@
+'use client';
+
+import React, { useState, useEffect, Suspense } from 'react';
+import { Form, Input, Button, Card, message, Typography, Divider, Spin } from 'antd';
+import { UserOutlined, LockOutlined, SafetyCertificateOutlined } from '@ant-design/icons';
+import { useRouter, useSearchParams } from 'next/navigation';
+
+const { Title } = Typography;
+
+function LoginForm() {
+  const [loading, setLoading] = useState(false);
+  const router = useRouter();
+  const searchParams = useSearchParams();
+
+  useEffect(() => {
+    const error = searchParams.get('error');
+    if (error) {
+      if (error === 'invalid_ticket') {
+        message.error('CAS票据验证失败，请重试');
+      } else if (error === 'no_ticket') {
+        message.error('未收到CAS票据');
+      } else {
+        message.error(`登录错误: ${error}`);
+      }
+    }
+  }, [searchParams]);
+
+  const onFinish = async (values: { username: string; password: string }) => {
+    setLoading(true);
+    try {
+      const response = await fetch('/api/auth/login', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(values),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        message.success('登录成功');
+        router.push('/dashboard');
+      } else {
+        message.error(data.message || '登录失败');
+      }
+    } catch {
+      message.error('登录失败，请稍后重试');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleCasLogin = () => {
+    window.location.href = '/api/auth/cas/login';
+  };
+
+  return (
+    <>
+      <Form
+        name="login"
+        onFinish={onFinish}
+        autoComplete="off"
+        size="large"
+      >
+        <Form.Item
+          name="username"
+          rules={[{ required: true, message: '请输入用户名' }]}
+        >
+          <Input prefix={<UserOutlined />} placeholder="用户名" />
+        </Form.Item>
+        <Form.Item
+          name="password"
+          rules={[{ required: true, message: '请输入密码' }]}
+        >
+          <Input.Password prefix={<LockOutlined />} placeholder="密码" />
+        </Form.Item>
+        <Form.Item>
+          <Button type="primary" htmlType="submit" block loading={loading}>
+            登录
+          </Button>
+        </Form.Item>
+      </Form>
+      <Divider plain>或</Divider>
+      <Button
+        block
+        size="large"
+        icon={<SafetyCertificateOutlined />}
+        onClick={handleCasLogin}
+        style={{ marginTop: 8 }}
+      >
+        企业微信/SSO登录
+      </Button>
+    </>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <div style={{
+      display: 'flex',
+      justifyContent: 'center',
+      alignItems: 'center',
+      minHeight: '100vh',
+      background: 'linear-gradient(135deg, #001529 0%, #1890ff 100%)',
+    }}>
+      <Card style={{ width: 400, boxShadow: '0 4px 12px rgba(0,0,0,0.15)' }}>
+        <div style={{ textAlign: 'center', marginBottom: 24 }}>
+          <Title level={2}>个人智慧运行中心</Title>
+          <Title level={5} type="secondary">PIOC</Title>
+        </div>
+        <Suspense fallback={<div style={{ textAlign: 'center', padding: 20 }}><Spin /></div>}>
+          <LoginForm />
+        </Suspense>
+      </Card>
+    </div>
+  );
+}

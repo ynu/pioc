@@ -1,0 +1,23 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { findAppsByUserId } from '@/lib/database/models/app';
+import { getSession } from '@/lib/auth/jwt';
+
+export async function GET(request: NextRequest) {
+  try {
+    const session = await getSession();
+    if (!session) {
+      return NextResponse.json(
+        { success: false, message: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+
+    const apps = await findAppsByUserId(session.userId);
+    return NextResponse.json({ success: true, data: apps });
+  } catch (error) {
+    return NextResponse.json(
+      { success: false, message: 'Failed to fetch apps', error: String(error) },
+      { status: 500 }
+    );
+  }
+}

@@ -1,0 +1,148 @@
+# ============================================
+# 个人智慧运行中心 (PIOC) 配置文件
+# ============================================
+# 请根据实际环境修改以下配置项
+# ============================================
+
+#------------------------------------------
+# 应用服务器配置
+#------------------------------------------
+app:
+  port: 8080
+  name: "个人智慧运行中心"
+  version: "1.0.0"
+  description: "Personal Intelligence Operation Center"
+
+#------------------------------------------
+# 数据库配置 (MySQL)
+#------------------------------------------
+database:
+  host: "localhost"
+  port: 3306
+  username: "root"
+  password: "your-password-here"
+  name: "mydb"
+  connectionLimit: 10
+  charset: "utf8mb4"
+
+#------------------------------------------
+# MongoDB 配置 (可选)
+#------------------------------------------
+mongodb:
+  enabled: false
+  host: "localhost"
+  port: 27017
+  username: "root"
+  password: "root123"
+  database: "mymongo"
+
+#------------------------------------------
+# Redis 配置 (可选)
+#------------------------------------------
+redis:
+  enabled: false
+  host: "localhost"
+  port: 6379
+  password: ""
+  db: 0
+
+#------------------------------------------
+# 安全配置
+#------------------------------------------
+security:
+  jwtSecret: "change-this-to-a-random-secret-key"
+  jwtExpireDays: 7
+  sessionCookieName: "pioc_auth_token"
+  httpsEnabled: false
+
+#------------------------------------------
+# CAS/SSO 单点登录配置
+#------------------------------------------
+cas:
+  enabled: true
+  serverUrl: "https://ids.ynu.edu.cn"
+  pathPrefix: "/authserver"
+  serviceUrl: "http://localhost:8080"
+  version: "3.0"
+  strictSSL: true
+  loginPath: "/login"
+  validatePath: "/p3/serviceValidate"
+  attributeMapping:
+    username: "username"
+    email: "email"
+    name: "name"
+  defaultRoleId: 2
+
+#------------------------------------------
+# 企业微信配置 (可选)
+#------------------------------------------
+wechat:
+  enabled: false
+  corpId: ""
+  agentId: ""
+  secret: ""
+
+#------------------------------------------
+# 日志配置
+#------------------------------------------
+logging:
+  level: "info"
+  format: "simple"
+  output: "console"
+
+#------------------------------------------
+# CORS 配置
+#------------------------------------------
+cors:
+  enabled: true
+  allowedOrigins:
+    - "http://localhost:8080"
+  allowedMethods:
+    - "GET"
+    - "POST"
+    - "PUT"
+    - "DELETE"
+    - "PATCH"
+  allowedHeaders:
+    - "Content-Type"
+    - "Authorization"
+
+#------------------------------------------
+# 文件上传配置
+#------------------------------------------
+upload:
+  maxFileSize: 10
+  allowedTypes:
+    - "jpg"
+    - "jpeg"
+    - "png"
+    - "gif"
+    - "pdf"
+    - "doc"
+    - "docx"
+    - "xls"
+    - "xlsx"
+  storagePath: "./uploads"
+
+#------------------------------------------
+# 邮件配置 (可选)
+#------------------------------------------
+mail:
+  enabled: false
+  smtpHost: "smtp.example.com"
+  smtpPort: 587
+  smtpUsername: ""
+  smtpPassword: ""
+  fromAddress: "noreply@example.com"
+  fromName: "PIOC 系统"
+
+#------------------------------------------
+# 系统功能开关
+#------------------------------------------
+features:
+  allowUserRegistration: true
+  enableCasLogin: true
+  enableWechatLogin: false
+  enableAuditLog: true
+  enableRateLimit: true
+  rateLimitPerMinute: 60
