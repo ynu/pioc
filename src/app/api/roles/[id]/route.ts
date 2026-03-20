@@ -132,12 +132,12 @@ async function patchRoleHandler(
 
 // 包装处理器以添加权限检查
 const wrapHandler = (handler: Function) => {
-  return async (request: NextRequest, context: { params: Promise<{ id: string }> }) => {
+  return async (request: NextRequest, context: { params: Promise<{ [key: string]: string }> }) => {
     const protectedHandler = createAppProtectedHandler(
-      (req: NextRequest) => handler(req, context),
+      (req: NextRequest, session: { userId: number; username: string; email: string; name: string }, params?: Promise<{ [key: string]: string }>) => handler(req, { params: params! }),
       appUrl
     );
-    return protectedHandler(request);
+    return protectedHandler(request, context);
   };
 };
 

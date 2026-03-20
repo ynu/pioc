@@ -44,6 +44,7 @@ interface MenuItem {
   status: number;
   app_id?: number | null;
   app_icon?: string;
+  app_url?: string;
   children?: MenuItem[];
 }
 
@@ -140,13 +141,46 @@ function AppLayout({ children }: AppLayoutProps) {
     }
   };
 
+  // 过滤掉没有可显示子项的菜单组
+  const filterEmptyMenuGroups = (items: MenuItem[]): MenuItem[] => {
+    return items.filter(item => {
+      // 如果是应用（有app_id），直接显示
+      if (item.app_id) {
+        return true;
+      }
+      // 如果是菜单组（没有app_id），检查是否有子项
+      if (item.children && item.children.length > 0) {
+        // 递归过滤子菜单
+        const filteredChildren = filterEmptyMenuGroups(item.children);
+        // 如果有有效的子项，保留此菜单组
+        return filteredChildren.length > 0;
+      }
+      // 没有子项的菜单组不显示
+      return false;
+    }).map(item => {
+      // 递归处理子菜单
+      if (item.children && item.children.length > 0) {
+        return {
+          ...item,
+          children: filterEmptyMenuGroups(item.children),
+        };
+      }
+      return item;
+    });
+  };
+
   // 将菜单数据转换为 Ant Design Menu 组件需要的格式
   const convertToMenuItems = (items: MenuItem[]): MenuProps['items'] => {
-    return items.map(item => {
+    // 先过滤掉空的菜单组
+    const filteredItems = filterEmptyMenuGroups(items);
+
+    return filteredItems.map(item => {
       // 如果是应用链接，优先使用应用的图标
       const iconName = item.app_id && item.app_icon ? item.app_icon : item.icon;
+      // 如果是应用菜单，使用应用的URL作为跳转路径
+      const menuPath = item.app_id && item.app_url ? item.app_url : item.path;
       const menuItem: any = {
-        key: item.path || `menu-${item.id}`,
+        key: menuPath || `menu-${item.id}`,
         icon: iconName ? iconMapping[iconName] : null,
         label: item.name,
       };
@@ -165,9 +199,11 @@ function AppLayout({ children }: AppLayoutProps) {
 
     const findPath = (items: MenuItem[], parentKeys: string[] = []): string[] => {
       for (const item of items) {
-        const currentKeys = [...parentKeys, item.path || `menu-${item.id}`];
+        // 如果是应用菜单，使用应用的URL作为路径
+        const menuPath = item.app_id && item.app_url ? item.app_url : item.path;
+        const currentKeys = [...parentKeys, menuPath || `menu-${item.id}`];
 
-        if (item.path && pathname.startsWith(item.path)) {
+        if (menuPath && pathname.startsWith(menuPath)) {
           return currentKeys;
         }
 

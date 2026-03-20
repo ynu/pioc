@@ -5,6 +5,7 @@ export const BUILTIN_APPS = {
   USER_MANAGEMENT: 1,    // 用户管理
   ROLE_MANAGEMENT: 2,    // 角色管理
   APP_MANAGEMENT: 3,     // 应用管理
+  MENU_MANAGEMENT: 4,    // 菜单管理
 } as const;
 
 // 内置应用URL映射
@@ -12,6 +13,7 @@ export const BUILTIN_APP_URLS = {
   '/users': BUILTIN_APPS.USER_MANAGEMENT,
   '/roles': BUILTIN_APPS.ROLE_MANAGEMENT,
   '/apps': BUILTIN_APPS.APP_MANAGEMENT,
+  '/menus': BUILTIN_APPS.MENU_MANAGEMENT,
 } as const;
 
 export interface App {

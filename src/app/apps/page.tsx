@@ -16,7 +16,24 @@ import {
   theme,
   Tooltip,
 } from 'antd';
-import { PlusOutlined, EditOutlined, DeleteOutlined, LockOutlined } from '@ant-design/icons';
+import {
+  PlusOutlined,
+  EditOutlined,
+  DeleteOutlined,
+  LockOutlined,
+  BookOutlined,
+  CalendarOutlined,
+  CameraOutlined,
+  CloudOutlined,
+  DashboardOutlined,
+  FileTextOutlined,
+  MailOutlined,
+  SettingOutlined,
+  TeamOutlined,
+  UserOutlined,
+  AppstoreOutlined,
+  MenuOutlined,
+} from '@ant-design/icons';
 import type { TableProps } from 'antd';
 
 interface App {
@@ -37,8 +54,24 @@ interface AppFormData {
   status?: number;
 }
 
-// 内置应用ID
-const BUILTIN_APP_IDS = [1, 2, 3];
+// 内置应用ID（包含菜单管理）
+const BUILTIN_APP_IDS = [1, 2, 3, 4];
+
+// 图标映射
+const iconMapping: Record<string, React.ReactNode> = {
+  BookOutlined: <BookOutlined />,
+  CalendarOutlined: <CalendarOutlined />,
+  CameraOutlined: <CameraOutlined />,
+  CloudOutlined: <CloudOutlined />,
+  DashboardOutlined: <DashboardOutlined />,
+  FileTextOutlined: <FileTextOutlined />,
+  MailOutlined: <MailOutlined />,
+  SettingOutlined: <SettingOutlined />,
+  TeamOutlined: <TeamOutlined />,
+  UserOutlined: <UserOutlined />,
+  AppstoreOutlined: <AppstoreOutlined />,
+  MenuOutlined: <MenuOutlined />,
+};
 
 const iconOptions = [
   { value: 'BookOutlined', label: '笔记' },
@@ -52,6 +85,7 @@ const iconOptions = [
   { value: 'TeamOutlined', label: '团队' },
   { value: 'UserOutlined', label: '用户' },
   { value: 'AppstoreOutlined', label: '应用' },
+  { value: 'MenuOutlined', label: '菜单' },
 ];
 
 export default function AppsPage() {
@@ -160,10 +194,11 @@ export default function AppsPage() {
       key: 'name',
       render: (name: string, record: App) => (
         <Space>
+          {record.icon && iconMapping[record.icon]}
           {name}
           {isBuiltinApp(record.id) && (
             <Tooltip title="内置应用，不允许删除，名称和URL不可修改">
-              <Tag icon={<LockOutlined />} color="blue">内置</Tag>
+              <Tag icon={<LockOutlined />} color="blue" />
             </Tooltip>
           )}
         </Space>
@@ -173,12 +208,6 @@ export default function AppsPage() {
       title: '描述',
       dataIndex: 'description',
       key: 'description',
-    },
-    {
-      title: '图标',
-      dataIndex: 'icon',
-      key: 'icon',
-      render: (icon: string) => icon ? <Tag>{icon}</Tag> : '-',
     },
     {
       title: '访问地址',

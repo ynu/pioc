@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { findById, update, remove, findByName, isBuiltinApp, BUILTIN_APPS } from '@/lib/database/models/app';
+import { findById, update, remove, findByName, isBuiltinApp } from '@/lib/database/models/app';
 import { createAppProtectedHandler } from '@/lib/auth/middleware';
 
 const appUrl = '/apps';
@@ -103,13 +103,15 @@ async function deleteAppHandler(
 }
 
 // 包装处理器以添加权限检查
-const wrapHandler = (handler: Function) => {
+type HandlerFunction = (req: NextRequest, ctx: { params: Promise<{ id: string }> }) => Promise<NextResponse>;
+
+const wrapHandler = (handler: HandlerFunction) => {
   return async (request: NextRequest, context: { params: Promise<{ id: string }> }) => {
     const protectedHandler = createAppProtectedHandler(
       (req: NextRequest) => handler(req, context),
       appUrl
     );
-    return protectedHandler(request);
+    return protectedHandler(request, context);
   };
 };
 

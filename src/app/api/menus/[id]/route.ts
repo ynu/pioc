@@ -11,7 +11,7 @@ import { createAppProtectedHandler } from '@/lib/auth/middleware';
 const appUrl = '/menus';
 
 // 获取单个菜单
-async function getMenuHandler(request: NextRequest, session: { userId: number; username: string; email: string; name: string }, params?: Promise<{ id: string }>) {
+async function getMenuHandler(request: NextRequest, session: { userId: number; username: string; email: string; name: string }, params?: Promise<{ [key: string]: string }>) {
   try {
     const { id } = await params!;
     const menuId = parseInt(id);
@@ -41,7 +41,7 @@ async function getMenuHandler(request: NextRequest, session: { userId: number; u
 }
 
 // 更新菜单
-async function updateMenuHandler(request: NextRequest, session: { userId: number; username: string; email: string; name: string }, params?: Promise<{ id: string }>) {
+async function updateMenuHandler(request: NextRequest, session: { userId: number; username: string; email: string; name: string }, params?: Promise<{ [key: string]: string }>) {
   try {
     const { id } = await params!;
     const menuId = parseInt(id);
@@ -121,7 +121,7 @@ async function updateMenuHandler(request: NextRequest, session: { userId: number
 }
 
 // 删除菜单
-async function deleteMenuHandler(request: NextRequest, session: { userId: number; username: string; email: string; name: string }, params?: Promise<{ id: string }>) {
+async function deleteMenuHandler(request: NextRequest, session: { userId: number; username: string; email: string; name: string }, params?: Promise<{ [key: string]: string }>) {
   try {
     const { id } = await params!;
     const menuId = parseInt(id);

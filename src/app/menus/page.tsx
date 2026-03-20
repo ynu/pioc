@@ -61,6 +61,7 @@ interface App {
   id: number;
   name: string;
   url: string;
+  icon?: string;
 }
 
 interface MenuFormData {
@@ -522,7 +523,7 @@ export default function MenusPage() {
               {apps.map(app => (
                 <Select.Option key={app.id} value={app.id} label={app.name}>
                   <Space>
-                    {iconMapping[app.icon] || <AppstoreOutlined />}
+                    {app.icon ? iconMapping[app.icon] || <AppstoreOutlined /> : <AppstoreOutlined />}
                     <span>{app.name}</span>
                     <Text type="secondary" style={{ fontSize: 12 }}>{app.url}</Text>
                   </Space>

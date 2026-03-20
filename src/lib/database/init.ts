@@ -156,7 +156,7 @@ export async function initializeDatabase() {
 async function createDefaultAdmin(connection: mysql.PoolConnection) {
   try {
     // 检查是否已存在 admin 账号
-    const [existingAdmin] = await connection.execute(
+    const [existingAdmin] = await connection.execute<mysql.RowDataPacket[]>(
       'SELECT id FROM pioc_users WHERE username = ?',
       ['admin']
     );
@@ -170,7 +170,7 @@ async function createDefaultAdmin(connection: mysql.PoolConnection) {
     const hashedPassword = await bcrypt.hash('admin123', 10);
 
     // 插入默认管理员账号
-    const [result] = await connection.execute(
+    const [result] = await connection.execute<mysql.ResultSetHeader>(
       'INSERT INTO pioc_users (username, email, password, name, status) VALUES (?, ?, ?, ?, ?)',
       ['admin', 'admin@pioc.local', hashedPassword, '系统管理员', 1]
     );

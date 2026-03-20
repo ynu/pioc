@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { findAll, create, findByName, findByStatus, BUILTIN_APPS, isBuiltinApp } from '@/lib/database/models/app';
+import { findAll, create, findByName, findByStatus } from '@/lib/database/models/app';
 import { createAppProtectedHandler } from '@/lib/auth/middleware';
 
 // 使用应用权限保护处理器（应用管理应用）
