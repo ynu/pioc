@@ -9,7 +9,7 @@ import {
   Modal,
   Form,
   Input,
-  message,
+  App,
   Popconfirm,
   Switch,
   Select,
@@ -51,6 +51,7 @@ export default function UsersPage() {
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [form] = Form.useForm();
   const { token } = theme.useToken();
+  const { message } = App.useApp();
 
   useEffect(() => {
     fetchUsers();

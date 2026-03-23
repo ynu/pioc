@@ -8,7 +8,7 @@ import {
   Modal,
   Form,
   Input,
-  message,
+  App,
   Popconfirm,
   Card,
   Transfer,
@@ -21,6 +21,7 @@ interface Role {
   id: number;
   name: string;
   description: string;
+  is_builtin: number;
   created_at: string;
 }
 
@@ -48,8 +49,10 @@ export default function RolesPage() {
   const [assignType, setAssignType] = useState<'users' | 'apps'>('users');
   const [roleUsers, setRoleUsers] = useState<number[]>([]);
   const [roleApps, setRoleApps] = useState<number[]>([]);
+  const [selectedKeys, setSelectedKeys] = useState<React.Key[] | null>(null);
   const [form] = Form.useForm();
   const { token } = theme.useToken();
+  const { message } = App.useApp();
 
   useEffect(() => {
     fetchRoles();
@@ -99,8 +102,10 @@ export default function RolesPage() {
 
   const fetchRoleData = async (roleId: number, type: 'users' | 'apps') => {
     try {
-      const response = await fetch(`/api/roles/${roleId}?action=get${type === 'users' ? 'Users' : 'Apps'}`, {
+      const response = await fetch(`/api/roles/${roleId}`, {
         method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ action: type === 'users' ? 'getUsers' : 'getApps' }),
       });
       const data = await response.json();
       if (data.success) {
@@ -172,12 +177,22 @@ export default function RolesPage() {
   const handleAssign = async (role: Role, type: 'users' | 'apps') => {
     setSelectedRole(role);
     setAssignType(type);
+    setSelectedKeys(null);
     await fetchRoleData(role.id, type);
     setAssignModalVisible(true);
   };
 
-  const handleAssignSubmit = async (targetKeys: React.Key[]) => {
-    const keys = targetKeys as number[];
+  const handleAssignModalClose = () => {
+    setAssignModalVisible(false);
+    setSelectedKeys(null);
+  };
+
+  const handleAssignChange = (nextTargetKeys: React.Key[]) => {
+    setSelectedKeys(nextTargetKeys);
+  };
+
+  const handleAssignSubmit = async () => {
+    const keys = (selectedKeys ?? (assignType === 'users' ? roleUsers : roleApps)) as number[];
     if (!selectedRole) return;
 
     try {
@@ -208,6 +223,12 @@ export default function RolesPage() {
       }
 
       message.success('分配成功');
+      if (assignType === 'users') {
+        setRoleUsers(keys);
+      } else {
+        setRoleApps(keys);
+      }
+      setSelectedKeys(null);
       setAssignModalVisible(false);
     } catch {
       message.error('分配失败');
@@ -241,35 +262,46 @@ export default function RolesPage() {
       title: '操作',
       key: 'action',
       width: 200,
-      render: (_, record) => (
-        <Space>
-          <Button type="link" icon={<EditOutlined />} onClick={() => handleEdit(record)}>
-            编辑
-          </Button>
-          <Button type="link" icon={<SettingOutlined />} onClick={() => handleAssign(record, 'users')}>
-            分配用户
-          </Button>
-          <Button type="link" icon={<SettingOutlined />} onClick={() => handleAssign(record, 'apps')}>
-            分配应用
-          </Button>
-          <Popconfirm
-            title="确定删除此角色？"
-            onConfirm={() => handleDelete(record.id)}
-            okText="确定"
-            cancelText="取消"
-          >
-            <Button type="link" danger icon={<DeleteOutlined />}>
-              删除
+      render: (_, record) => {
+        const isBuiltin = record.is_builtin === 1;
+        return (
+          <Space>
+            {!isBuiltin && (
+              <Button type="link" icon={<EditOutlined />} onClick={() => handleEdit(record)}>
+                编辑
+              </Button>
+            )}
+            <Button type="link" icon={<SettingOutlined />} onClick={() => handleAssign(record, 'users')}>
+              分配用户
             </Button>
-          </Popconfirm>
-        </Space>
-      ),
+            <Button type="link" icon={<SettingOutlined />} onClick={() => handleAssign(record, 'apps')}>
+              分配应用
+            </Button>
+            {!isBuiltin && (
+              <Popconfirm
+                title="确定删除此角色？"
+                onConfirm={() => handleDelete(record.id)}
+                okText="确定"
+                cancelText="取消"
+              >
+                <Button type="link" danger icon={<DeleteOutlined />}>
+                  删除
+                </Button>
+              </Popconfirm>
+            )}
+          </Space>
+        );
+      },
     },
   ];
 
   const transferDataSource = assignType === 'users'
     ? users.map(u => ({ key: u.id, title: u.name || u.username }))
     : apps.map(a => ({ key: a.id, title: a.name }));
+
+  const transferTargetKeys = selectedKeys !== null
+    ? selectedKeys
+    : (assignType === 'users' ? roleUsers : roleApps);
 
   return (
     <div>
@@ -316,17 +348,24 @@ export default function RolesPage() {
       <Modal
         title={`为角色「${selectedRole?.name}」分配${assignType === 'users' ? '用户' : '应用'}`}
         open={assignModalVisible}
-        onCancel={() => setAssignModalVisible(false)}
-        footer={null}
+        onCancel={handleAssignModalClose}
+        footer={(
+          <Space style={{ display: 'flex', justifyContent: 'flex-end' }}>
+            <Button onClick={handleAssignModalClose}>取消</Button>
+            <Button type="primary" onClick={handleAssignSubmit}>
+              确定
+            </Button>
+          </Space>
+        )}
         width={600}
       >
         <Transfer
           dataSource={transferDataSource}
-          targetKeys={assignType === 'users' ? roleUsers : roleApps}
-          onChange={handleAssignSubmit}
+          targetKeys={transferTargetKeys}
+          onChange={handleAssignChange}
           render={(item) => item.title || ''}
           titles={['可选', '已选']}
-          listStyle={{ width: 260, height: 400 }}
+          styles={{ section: { width: 260, height: 400 } }}
         />
       </Modal>
     </div>

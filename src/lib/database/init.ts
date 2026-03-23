@@ -23,9 +23,11 @@ CREATE TABLE IF NOT EXISTS pioc_roles (
   id INT AUTO_INCREMENT PRIMARY KEY,
   name VARCHAR(50) NOT NULL UNIQUE,
   description VARCHAR(255),
+  is_builtin TINYINT DEFAULT 0 COMMENT '1-内置角色，0-普通角色',
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
   updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-  INDEX idx_name (name)
+  INDEX idx_name (name),
+  INDEX idx_is_builtin (is_builtin)
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 -- 创建用户角色关联表
@@ -101,11 +103,11 @@ CREATE TABLE IF NOT EXISTS pioc_menus (
   FOREIGN KEY (app_id) REFERENCES pioc_apps(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
--- 插入默认角色
-INSERT IGNORE INTO pioc_roles (id, name, description) VALUES
-  (1, 'admin', '系统管理员'),
-  (2, 'user', '普通用户'),
-  (3, 'guest', '访客');
+-- 插入默认角色（内置角色）
+INSERT IGNORE INTO pioc_roles (id, name, description, is_builtin) VALUES
+  (1, 'admin', '系统管理员', 1),
+  (2, 'user', '普通用户', 1),
+  (3, 'guest', '访客', 1);
 
 -- 插入内置应用（用户管理、角色管理、应用管理）
 INSERT IGNORE INTO pioc_apps (id, name, description, icon, url, status) VALUES
