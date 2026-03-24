@@ -17,7 +17,6 @@ import {
   Tooltip,
 } from 'antd';
 import {
-  PlusOutlined,
   EditOutlined,
   DeleteOutlined,
   LockOutlined,
@@ -54,8 +53,8 @@ interface AppFormData {
   status?: number;
 }
 
-// 内置应用ID（包含菜单管理）
-const BUILTIN_APP_IDS = [1, 2, 3, 4];
+// 内置应用ID（包含菜单管理、我的应用）
+const BUILTIN_APP_IDS = [1, 2, 3, 4, 5];
 
 // 图标映射
 const iconMapping: Record<string, React.ReactNode> = {
@@ -87,6 +86,17 @@ const iconOptions = [
   { value: 'AppstoreOutlined', label: '应用' },
   { value: 'MenuOutlined', label: '菜单' },
 ];
+
+// 图标选择器选项渲染
+const iconSelectOptions = iconOptions.map(option => ({
+  value: option.value,
+  label: (
+    <Space>
+      {iconMapping[option.value]}
+      <span>{option.label}</span>
+    </Space>
+  ),
+}));
 
 export default function AppsPage() {
   const [apps, setApps] = useState<App[]>([]);
@@ -120,13 +130,6 @@ export default function AppsPage() {
 
   const isBuiltinApp = (id: number) => BUILTIN_APP_IDS.includes(id);
 
-  const handleAdd = () => {
-    setEditingApp(null);
-    form.resetFields();
-    form.setFieldsValue({ status: true });
-    setModalVisible(true);
-  };
-
   const handleEdit = (app: App) => {
     setEditingApp(app);
     form.setFieldsValue({
@@ -156,11 +159,10 @@ export default function AppsPage() {
 
   const handleSubmit = async (values: AppFormData) => {
     try {
-      const url = editingApp ? `/api/apps/${editingApp.id}` : '/api/apps';
-      const method = editingApp ? 'PUT' : 'POST';
-
-      const response = await fetch(url, {
-        method,
+      if (!editingApp) return;
+      
+      const response = await fetch(`/api/apps/${editingApp.id}`, {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           ...values,
@@ -170,7 +172,7 @@ export default function AppsPage() {
 
       const data = await response.json();
       if (data.success) {
-        message.success(editingApp ? '更新应用成功' : '创建应用成功');
+        message.success('更新应用成功');
         setModalVisible(false);
         fetchApps();
       } else {
@@ -187,11 +189,14 @@ export default function AppsPage() {
       dataIndex: 'id',
       key: 'id',
       width: 80,
+      sorter: (a, b) => a.id - b.id,
+      defaultSortOrder: 'ascend',
     },
     {
       title: '应用名称',
       dataIndex: 'name',
       key: 'name',
+      width: 200,
       render: (name: string, record: App) => (
         <Space>
           {record.icon && iconMapping[record.icon]}
@@ -229,7 +234,20 @@ export default function AppsPage() {
       title: '创建时间',
       dataIndex: 'created_at',
       key: 'created_at',
-      render: (text: string) => new Date(text).toLocaleString('zh-CN'),
+      render: (text: string) => {
+        const date = new Date(text);
+        // 转换为北京时间 (UTC+8)
+        const beijingTime = new Date(date.getTime() + 8 * 60 * 60 * 1000);
+        return beijingTime.toLocaleString('zh-CN', {
+          year: 'numeric',
+          month: '2-digit',
+          day: '2-digit',
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: false,
+        });
+      },
     },
     {
       title: '操作',
@@ -259,11 +277,8 @@ export default function AppsPage() {
 
   return (
     <div>
-      <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 16 }}>
+      <div style={{ marginBottom: 16 }}>
         <h1 style={{ fontSize: 24, margin: 0 }}>应用管理</h1>
-        <Button type="primary" icon={<PlusOutlined />} onClick={handleAdd}>
-          添加应用
-        </Button>
       </div>
       <Table
         columns={columns}
@@ -273,7 +288,7 @@ export default function AppsPage() {
         pagination={{ pageSize: 10 }}
       />
       <Modal
-        title={editingApp ? '编辑应用' : '添加应用'}
+        title="编辑应用"
         open={modalVisible}
         onCancel={() => setModalVisible(false)}
         footer={null}
@@ -293,7 +308,11 @@ export default function AppsPage() {
             <Input.TextArea placeholder="请输入应用描述" rows={3} />
           </Form.Item>
           <Form.Item name="icon" label="图标">
-            <Select placeholder="请选择图标" options={iconOptions} />
+            <Select
+              placeholder="请选择图标"
+              options={iconSelectOptions}
+              optionLabelProp="value"
+            />
           </Form.Item>
           <Form.Item name="url" label="访问地址">
             <Input 
@@ -313,7 +332,7 @@ export default function AppsPage() {
             <Space>
               <Button onClick={() => setModalVisible(false)}>取消</Button>
               <Button type="primary" htmlType="submit">
-                {editingApp ? '更新' : '创建'}
+                更新
               </Button>
             </Space>
           </Form.Item>

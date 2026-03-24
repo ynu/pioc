@@ -109,12 +109,13 @@ INSERT IGNORE INTO pioc_roles (id, name, description, is_builtin) VALUES
   (2, 'user', '普通用户', 1),
   (3, 'guest', '访客', 1);
 
--- 插入内置应用（用户管理、角色管理、应用管理）
+-- 插入内置应用（用户管理、角色管理、应用管理、菜单管理、我的应用）
 INSERT IGNORE INTO pioc_apps (id, name, description, icon, url, status) VALUES
   (1, '用户管理', '管理系统用户，包括用户的增删改查和角色分配', 'UserOutlined', '/users', 1),
   (2, '角色管理', '管理系统角色，包括角色的增删改查、用户分配和应用权限分配', 'TeamOutlined', '/roles', 1),
   (3, '应用管理', '管理系统应用，包括应用的增删改查和权限控制', 'AppstoreOutlined', '/apps', 1),
-  (4, '菜单管理', '管理系统顶部导航菜单，支持多级菜单配置', 'MenuOutlined', '/menus', 1);
+  (4, '菜单管理', '管理系统顶部导航菜单，支持多级菜单配置', 'MenuOutlined', '/menus', 1),
+  (5, '我的应用', '以卡片方式展示当前登录用户有权限的应用，可点击进入', 'AppstoreOutlined', '/my-apps', 1);
 
 -- 插入默认菜单
 INSERT IGNORE INTO pioc_menus (id, name, path, icon, parent_id, sort_order, status, app_id) VALUES

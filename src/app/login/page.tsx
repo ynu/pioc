@@ -38,7 +38,7 @@ function LoginForm() {
 
       if (data.success) {
         message.success('登录成功');
-        router.push('/dashboard');
+        router.push('/my-apps');
       } else {
         message.error(data.message || '登录失败');
       }

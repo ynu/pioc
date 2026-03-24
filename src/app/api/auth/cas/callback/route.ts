@@ -28,5 +28,5 @@ export async function GET(request: NextRequest) {
 
   await setSessionCookie(token);
 
-  return NextResponse.redirect(new URL('/dashboard', request.url));
+  return NextResponse.redirect(new URL('/my-apps', request.url));
 }

@@ -1,25 +1,15 @@
 'use client';
 
 import React, { useEffect, useState } from 'react';
-import { Row, Col, Card, Statistic, Avatar, theme, Flex, Typography, Empty } from 'antd';
+import { Row, Col, Card, Statistic, Avatar, theme, Flex, Typography } from 'antd';
 import {
   UserOutlined,
   TeamOutlined,
   AppstoreOutlined,
   RiseOutlined,
   ClockCircleOutlined,
-  ArrowRightOutlined,
 } from '@ant-design/icons';
 import Link from 'next/link';
-
-interface App {
-  id: number;
-  name: string;
-  description: string;
-  icon: string;
-  url: string;
-  status: number;
-}
 
 interface DashboardStats {
   totalUsers: number;
@@ -34,23 +24,7 @@ interface RecentActivity {
   time: string;
 }
 
-// 图标映射
-const iconMapping: Record<string, React.ReactNode> = {
-  UserOutlined: <UserOutlined />,
-  TeamOutlined: <TeamOutlined />,
-  AppstoreOutlined: <AppstoreOutlined />,
-  BookOutlined: <AppstoreOutlined />,
-  CalendarOutlined: <AppstoreOutlined />,
-  CameraOutlined: <AppstoreOutlined />,
-  CloudOutlined: <AppstoreOutlined />,
-  DashboardOutlined: <AppstoreOutlined />,
-  FileTextOutlined: <AppstoreOutlined />,
-  MailOutlined: <AppstoreOutlined />,
-  SettingOutlined: <AppstoreOutlined />,
-};
-
 export default function DashboardPage() {
-  const [apps, setApps] = useState<App[]>([]);
   const [stats, setStats] = useState<DashboardStats>({ totalUsers: 0, totalRoles: 0, totalApps: 0 });
   const [loading, setLoading] = useState(true);
   const { token } = theme.useToken();
@@ -61,14 +35,6 @@ export default function DashboardPage() {
 
   const fetchDashboardData = async () => {
     try {
-      // 获取用户有权限的应用
-      const myAppsRes = await fetch('/api/apps/my');
-      const myAppsData = await myAppsRes.json();
-      if (myAppsData.success) {
-        setApps(myAppsData.data);
-      }
-
-      // 获取统计数据
       const [usersRes, rolesRes, appsRes] = await Promise.all([
         fetch('/api/users'),
         fetch('/api/roles'),
@@ -112,59 +78,9 @@ export default function DashboardPage() {
     }
   };
 
-  const getAppIcon = (iconName: string) => {
-    return iconMapping[iconName] || <AppstoreOutlined />;
-  };
-
   return (
     <div>
       <h1 style={{ fontSize: 24, marginBottom: 24 }}>仪表盘</h1>
-      
-      {/* 我的应用区域 */}
-      <Card 
-        title="我的应用" 
-        variant="borderless" 
-        style={{ marginBottom: 24 }}
-        loading={loading}
-      >
-        {apps.length === 0 ? (
-          <Empty description="暂无可用应用" />
-        ) : (
-          <Row gutter={[16, 16]}>
-            {apps.map((app) => (
-              <Col xs={24} sm={12} lg={8} key={app.id}>
-                <Link href={app.url || '#'} style={{ textDecoration: 'none' }}>
-                  <Card
-                    hoverable
-                    variant="borderless"
-                    style={{
-                      background: token.colorBgContainer,
-                      border: `1px solid ${token.colorBorderSecondary}`,
-                    }}
-                  >
-                    <Flex align="center" gap={16}>
-                      <Avatar
-                        size={48}
-                        icon={getAppIcon(app.icon)}
-                        style={{ backgroundColor: token.colorPrimary }}
-                      />
-                      <Flex vertical flex={1}>
-                        <Typography.Text strong style={{ fontSize: 16 }}>
-                          {app.name}
-                        </Typography.Text>
-                        <Typography.Text type="secondary" ellipsis>
-                          {app.description || '暂无描述'}
-                        </Typography.Text>
-                      </Flex>
-                      <ArrowRightOutlined style={{ color: token.colorTextSecondary }} />
-                    </Flex>
-                  </Card>
-                </Link>
-              </Col>
-            ))}
-          </Row>
-        )}
-      </Card>
 
       {/* 统计数据 */}
       <Row gutter={[16, 16]}>

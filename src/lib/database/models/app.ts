@@ -6,6 +6,7 @@ export const BUILTIN_APPS = {
   ROLE_MANAGEMENT: 2,    // 角色管理
   APP_MANAGEMENT: 3,     // 应用管理
   MENU_MANAGEMENT: 4,    // 菜单管理
+  MY_APPS: 5,            // 我的应用
 } as const;
 
 // 内置应用URL映射
@@ -14,6 +15,7 @@ export const BUILTIN_APP_URLS = {
   '/roles': BUILTIN_APPS.ROLE_MANAGEMENT,
   '/apps': BUILTIN_APPS.APP_MANAGEMENT,
   '/menus': BUILTIN_APPS.MENU_MANAGEMENT,
+  '/my-apps': BUILTIN_APPS.MY_APPS,
 } as const;
 
 export interface App {
@@ -36,6 +38,8 @@ export function isBuiltinApp(appId: number): boolean {
 export function getBuiltinAppIdByUrl(url: string): number | null {
   return BUILTIN_APP_URLS[url as keyof typeof BUILTIN_APP_URLS] || null;
 }
+
+
 
 export interface CreateAppData {
   name: string;
