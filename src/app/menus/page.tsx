@@ -463,11 +463,10 @@ export default function MenusPage() {
             <Select
               placeholder="请选择图标"
               allowClear
-              optionLabelProp="label"
               style={{ width: '100%' }}
             >
               {iconOptions.map(option => (
-                <Select.Option key={option.value} value={option.value} label={option.label}>
+                <Select.Option key={option.value} value={option.value}>
                   <Space>
                     {iconMapping[option.value]}
                     <span>{option.label}</span>

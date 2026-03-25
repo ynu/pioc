@@ -83,3 +83,9 @@ export function createAppProtectedHandler(
     return handler(request, session, params);
   };
 }
+
+// 获取当前用户ID
+export async function getCurrentUserId(request: NextRequest): Promise<number | null> {
+  const session = await getSession();
+  return session?.userId || null;
+}

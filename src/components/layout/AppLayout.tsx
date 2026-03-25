@@ -179,8 +179,9 @@ function AppLayout({ children }: AppLayoutProps) {
       const iconName = item.app_id && item.app_icon ? item.app_icon : item.icon;
       // 如果是应用菜单，使用应用的URL作为跳转路径
       const menuPath = item.app_id && item.app_url ? item.app_url : item.path;
+      // 使用菜单ID作为key，确保唯一性
       const menuItem: any = {
-        key: menuPath || `menu-${item.id}`,
+        key: `menu-${item.id}`,
         icon: iconName ? iconMapping[iconName] : null,
         label: item.name,
       };
@@ -199,9 +200,11 @@ function AppLayout({ children }: AppLayoutProps) {
 
     const findPath = (items: MenuItem[], parentKeys: string[] = []): string[] => {
       for (const item of items) {
-        // 如果是应用菜单，使用应用的URL作为路径
+        // 使用菜单ID作为key
+        const currentKey = `menu-${item.id}`;
+        const currentKeys = [...parentKeys, currentKey];
+        // 如果是应用菜单，使用应用的URL作为路径进行匹配
         const menuPath = item.app_id && item.app_url ? item.app_url : item.path;
-        const currentKeys = [...parentKeys, menuPath || `menu-${item.id}`];
 
         if (menuPath && pathname.startsWith(menuPath)) {
           return currentKeys;
@@ -221,8 +224,25 @@ function AppLayout({ children }: AppLayoutProps) {
   };
 
   const handleNavClick = ({ key }: { key: string }) => {
-    if (key.startsWith('/')) {
-      router.push(key);
+    // 从key中提取菜单ID，查找对应的跳转路径
+    const menuId = key.replace('menu-', '');
+    const findMenuPath = (items: MenuItem[]): string | null => {
+      for (const item of items) {
+        if (item.id.toString() === menuId) {
+          // 如果是应用菜单，使用应用的URL作为跳转路径
+          return item.app_id && item.app_url ? item.app_url : item.path;
+        }
+        if (item.children) {
+          const path = findMenuPath(item.children);
+          if (path) return path;
+        }
+      }
+      return null;
+    };
+
+    const menuPath = findMenuPath(menus);
+    if (menuPath) {
+      router.push(menuPath);
     }
   };
 

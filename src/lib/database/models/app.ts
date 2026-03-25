@@ -7,6 +7,8 @@ export const BUILTIN_APPS = {
   APP_MANAGEMENT: 3,     // 应用管理
   MENU_MANAGEMENT: 4,    // 菜单管理
   MY_APPS: 5,            // 我的应用
+  DATA_SOURCE_MANAGEMENT: 6,  // 数据源管理
+  KEY_MANAGEMENT: 7,     // 密钥管理
 } as const;
 
 // 内置应用URL映射
@@ -16,6 +18,8 @@ export const BUILTIN_APP_URLS = {
   '/apps': BUILTIN_APPS.APP_MANAGEMENT,
   '/menus': BUILTIN_APPS.MENU_MANAGEMENT,
   '/my-apps': BUILTIN_APPS.MY_APPS,
+  '/data-sources': BUILTIN_APPS.DATA_SOURCE_MANAGEMENT,
+  '/key-management': BUILTIN_APPS.KEY_MANAGEMENT,
 } as const;
 
 export interface App {

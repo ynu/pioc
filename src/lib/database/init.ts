@@ -103,6 +103,44 @@ CREATE TABLE IF NOT EXISTS pioc_menus (
   FOREIGN KEY (app_id) REFERENCES pioc_apps(id) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
+-- 创建数据源表
+CREATE TABLE IF NOT EXISTS pioc_data_sources (
+  id CHAR(36) PRIMARY KEY DEFAULT (UUID()),
+  name VARCHAR(100) NOT NULL COMMENT '数据源名称',
+  type VARCHAR(20) NOT NULL COMMENT '数据源类型：mysql, mongodb',
+  host VARCHAR(255) NOT NULL COMMENT '主机地址',
+  port INT NOT NULL COMMENT '端口号',
+  username VARCHAR(100) NOT NULL COMMENT '用户名',
+  password VARCHAR(255) NOT NULL COMMENT '密码',
+  db_name VARCHAR(100) NOT NULL COMMENT '数据库名称',
+  description VARCHAR(500) COMMENT '描述',
+  status TINYINT DEFAULT 1 COMMENT '1-启用，0-禁用',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_name (name),
+  INDEX idx_type (type),
+  INDEX idx_status (status)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 创建密钥表
+CREATE TABLE IF NOT EXISTS pioc_keys (
+  id CHAR(36) PRIMARY KEY DEFAULT (UUID()),
+  name VARCHAR(100) NOT NULL COMMENT '密钥名称',
+  type VARCHAR(10) NOT NULL COMMENT '密钥类型：RSA, ECC, EdDSA',
+  key_size INT DEFAULT NULL COMMENT '密钥长度（RSA使用）',
+  curve VARCHAR(20) DEFAULT NULL COMMENT '曲线名称（ECC/EdDSA使用）',
+  public_key TEXT NOT NULL COMMENT '公钥',
+  private_key TEXT NOT NULL COMMENT '私钥',
+  description VARCHAR(500) COMMENT '描述',
+  user_id INT NOT NULL COMMENT '创建用户ID',
+  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  INDEX idx_name (name),
+  INDEX idx_type (type),
+  INDEX idx_user_id (user_id),
+  FOREIGN KEY (user_id) REFERENCES pioc_users(id) ON DELETE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 -- 插入默认角色（内置角色）
 INSERT IGNORE INTO pioc_roles (id, name, description, is_builtin) VALUES
   (1, 'admin', '系统管理员', 1),
@@ -115,7 +153,9 @@ INSERT IGNORE INTO pioc_apps (id, name, description, icon, url, status) VALUES
   (2, '角色管理', '管理系统角色，包括角色的增删改查、用户分配和应用权限分配', 'TeamOutlined', '/roles', 1),
   (3, '应用管理', '管理系统应用，包括应用的增删改查和权限控制', 'AppstoreOutlined', '/apps', 1),
   (4, '菜单管理', '管理系统顶部导航菜单，支持多级菜单配置', 'MenuOutlined', '/menus', 1),
-  (5, '我的应用', '以卡片方式展示当前登录用户有权限的应用，可点击进入', 'AppstoreOutlined', '/my-apps', 1);
+  (5, '我的应用', '以卡片方式展示当前登录用户有权限的应用，可点击进入', 'AppstoreOutlined', '/my-apps', 1),
+  (6, '数据源管理', '管理MySQL、MongoDB等数据源的基本信息', 'DatabaseOutlined', '/data-sources', 1),
+  (7, '密钥管理', '创建和管理RSA、ECC、EdDSA等类型的密钥', 'KeyOutlined', '/key-management', 1);
 
 -- 插入默认菜单
 INSERT IGNORE INTO pioc_menus (id, name, path, icon, parent_id, sort_order, status, app_id) VALUES
@@ -146,6 +186,9 @@ export async function initializeDatabase() {
 
     // 为admin角色分配菜单管理应用权限
     await assignMenuAppPermission(connection);
+
+    // 为admin角色分配其他预装应用权限
+    await assignAdditionalAppPermissions(connection);
 
     console.log('Database initialized successfully');
   } catch (error) {
@@ -220,6 +263,23 @@ async function assignMenuAppPermission(connection: mysql.PoolConnection) {
     console.log('Menu app permission assigned to admin role');
   } catch (error) {
     console.error('Failed to assign menu app permission:', error);
+    throw error;
+  }
+}
+
+async function assignAdditionalAppPermissions(connection: mysql.PoolConnection) {
+  try {
+    // 为 admin 角色分配其他预装应用权限（应用ID 5, 6, 7）
+    const additionalAppIds = [5, 6, 7];
+    for (const appId of additionalAppIds) {
+      await connection.execute(
+        'INSERT IGNORE INTO pioc_role_apps (role_id, app_id) VALUES (?, ?)',
+        [1, appId] // role_id = 1 是 admin 角色
+      );
+    }
+    console.log('Additional app permissions assigned to admin role');
+  } catch (error) {
+    console.error('Failed to assign additional app permissions:', error);
     throw error;
   }
 }

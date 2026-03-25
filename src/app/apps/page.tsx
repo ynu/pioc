@@ -32,6 +32,8 @@ import {
   UserOutlined,
   AppstoreOutlined,
   MenuOutlined,
+  DatabaseOutlined,
+  KeyOutlined,
 } from '@ant-design/icons';
 import type { TableProps } from 'antd';
 
@@ -70,6 +72,8 @@ const iconMapping: Record<string, React.ReactNode> = {
   UserOutlined: <UserOutlined />,
   AppstoreOutlined: <AppstoreOutlined />,
   MenuOutlined: <MenuOutlined />,
+  DatabaseOutlined: <DatabaseOutlined />,
+  KeyOutlined: <KeyOutlined />,
 };
 
 const iconOptions = [
@@ -78,7 +82,9 @@ const iconOptions = [
   { value: 'CameraOutlined', label: '相机' },
   { value: 'CloudOutlined', label: '云存储' },
   { value: 'DashboardOutlined', label: '仪表盘' },
+  { value: 'DatabaseOutlined', label: '数据库' },
   { value: 'FileTextOutlined', label: '文档' },
+  { value: 'KeyOutlined', label: '密钥' },
   { value: 'MailOutlined', label: '邮件' },
   { value: 'SettingOutlined', label: '设置' },
   { value: 'TeamOutlined', label: '团队' },
@@ -317,7 +323,7 @@ export default function AppsPage() {
           <Form.Item name="url" label="访问地址">
             <Input 
               placeholder="请输入应用访问地址" 
-              disabled={editingApp ? isBuiltinApp(editingApp.id) : false}
+              disabled={true}
             />
           </Form.Item>
           <Form.Item name="status" label="状态" valuePropName="checked">

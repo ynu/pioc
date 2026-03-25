@@ -85,12 +85,37 @@ export function getPreinstalledAppIdByUrl(url: string): number | null {
 }
 ```
 
-#### C. 开发环境直接插入（可选）
+#### C. 开发环境直接插入（必须）
 
-如果开发环境数据库已初始化，可直接执行：
+⚠️ **重要**: 除了在初始化脚本中注册应用外，**在创建应用时还必须直接向数据库插入应用记录**。这是为了：
+- **开发调试**: 开发环境数据库已初始化，需要立即看到应用
+- **重新部署**: 初始化脚本用于新环境自动创建应用
+
+**执行SQL**:
 ```sql
 INSERT INTO pioc_apps (id, name, description, icon, url, status) 
 VALUES (5, '应用名称', '应用描述', 'AppstoreOutlined', '/your-app-path', 1);
+```
+
+**执行方式**（选择其一）:
+1. **使用docker命令**（推荐）:
+   ```bash
+   docker exec -it mysql mysql -uroot -proot123 -e "SET NAMES utf8mb4; INSERT INTO mydb.pioc_apps (id, name, description, icon, url, status) VALUES (5, '应用名称', '应用描述', 'AppstoreOutlined', '/your-app-path', 1);"
+   ```
+
+2. **使用数据库客户端**: 直接连接MySQL执行SQL
+
+3. **创建脚本执行**: 创建临时脚本执行插入操作
+
+**⚠️ 重要：字符集设置**
+执行SQL前必须设置字符集为 `utf8mb4`，否则中文会显示为乱码：
+```sql
+SET NAMES utf8mb4;
+```
+
+**验证插入成功**:
+```bash
+docker exec -it mysql mysql -uroot -proot123 -e "SET NAMES utf8mb4; SELECT id, name, url FROM mydb.pioc_apps WHERE id = 5;"
 ```
 
 **重要字段说明**:
@@ -127,9 +152,13 @@ export default function YourAppPage() {
 }
 ```
 
-**创建布局文件**（可选，如果需要自定义布局）:
+**创建布局文件**（必须）:
+
+**文件位置**: `src/app/{your-app-path}/layout.tsx`
+
+所有应用都必须使用 `AppLayout` 布局，以保持统一的页面结构（包含顶部导航栏）：
+
 ```tsx
-// src/app/{your-app-path}/layout.tsx
 import AppLayout from '@/components/layout/AppLayout';
 
 export default function YourAppLayout({
@@ -140,6 +169,8 @@ export default function YourAppLayout({
   return <AppLayout>{children}</AppLayout>;
 }
 ```
+
+**注意**: 如果不创建布局文件，页面将不会显示顶部导航菜单，用户无法在不同应用间切换。
 
 ### 3. 创建API接口
 
@@ -393,7 +424,11 @@ export const GET = createAppProtectedHandler(getBooksHandler, appUrl);
 5. **预装应用特性**: 预装应用有固定ID和URL，硬编码在系统中，但可以被删除和修改
 6. **数据库表前缀**: 所有自定义数据表必须使用 `pioc_` 前缀
 7. **图标选择**: 使用Ant Design的图标组件名称
-8. **初始化脚本**: 务必在 `init.ts` 中添加应用，确保新环境能自动创建
+8. **⚠️ 双重注册要求**: 创建应用时必须同时完成：
+   - **初始化脚本**: 在 `init.ts` 中添加应用，确保新环境能自动创建
+   - **开发环境插入**: 直接向数据库插入应用记录，确保开发环境立即可用
+   
+   两者缺一不可！初始化脚本用于重新部署，开发环境插入用于即时调试。
 
 ## 相关文件参考
 
