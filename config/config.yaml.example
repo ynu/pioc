@@ -137,6 +137,18 @@ mail:
   fromName: "PIOC 系统"
 
 #------------------------------------------
+# 本科教师授课信息应用配置
+#------------------------------------------
+apps:
+  teacherTeaching:
+    # 数据源ID（从数据源管理应用中获取）
+    dataSourceId: ""
+    # 学年学期表名
+    semesterTableName: "t_yzsj_dm_xb_xnxqm"
+    # 教师授课信息表名
+    teachingInfoTableName: "t_dws_gxjx_bzksjsskxx_v11mx"
+
+#------------------------------------------
 # 系统功能开关
 #------------------------------------------
 features:

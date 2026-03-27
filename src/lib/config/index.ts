@@ -86,6 +86,13 @@ export interface AppConfig {
     fromAddress: string;
     fromName: string;
   };
+  apps?: {
+    teacherTeaching?: {
+      dataSourceId: string;
+      semesterTableName: string;
+      teachingInfoTableName: string;
+    };
+  };
   features: {
     allowUserRegistration: boolean;
     enableCasLogin: boolean;

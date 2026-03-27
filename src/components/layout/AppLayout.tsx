@@ -326,6 +326,7 @@ function AppLayout({ children }: AppLayoutProps) {
   }
 
   return (
+    <App>
     <Layout style={{ minHeight: '100vh' }}>
       <Header style={{
         display: 'flex',
@@ -399,6 +400,7 @@ function AppLayout({ children }: AppLayoutProps) {
         </Text>
       </Footer>
     </Layout>
+    </App>
   );
 }
 

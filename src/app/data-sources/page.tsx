@@ -16,13 +16,15 @@ import {
   Switch,
   Card,
   Typography,
+  Descriptions,
 } from 'antd';
 import {
   EditOutlined,
   DeleteOutlined,
   PlusOutlined,
-  DatabaseOutlined,
   ApiOutlined,
+  LinkOutlined,
+  CopyOutlined,
 } from '@ant-design/icons';
 import Image from 'next/image';
 import type { TableProps } from 'antd';
@@ -75,6 +77,8 @@ export default function DataSourcesPage() {
   const [loading, setLoading] = useState(true);
   const [modalVisible, setModalVisible] = useState(false);
   const [editingDataSource, setEditingDataSource] = useState<DataSource | null>(null);
+  const [detailModalVisible, setDetailModalVisible] = useState(false);
+  const [selectedDataSource, setSelectedDataSource] = useState<DataSource | null>(null);
   const [form] = Form.useForm();
   const { message } = App.useApp();
 
@@ -155,6 +159,11 @@ export default function DataSourcesPage() {
     }
   };
 
+  const handleShowDetail = (dataSource: DataSource) => {
+    setSelectedDataSource(dataSource);
+    setDetailModalVisible(true);
+  };
+
   const handleSubmit = async (values: DataSourceFormData) => {
     try {
       const submitData = {
@@ -218,12 +227,16 @@ export default function DataSourcesPage() {
       title: '数据源名称',
       dataIndex: 'name',
       key: 'name',
-      width: 180,
-      render: (name: string) => (
-        <Space>
-          <DatabaseOutlined />
+      width: 200,
+      render: (name: string, record: DataSource) => (
+        <Button
+          type="link"
+          icon={<LinkOutlined />}
+          onClick={() => handleShowDetail(record)}
+          style={{ padding: 0 }}
+        >
           {name}
-        </Space>
+        </Button>
       ),
     },
     {
@@ -235,15 +248,9 @@ export default function DataSourcesPage() {
       ),
     },
     {
-      title: '用户名',
-      dataIndex: 'username',
-      key: 'username',
-      width: 120,
-    },
-    {
       title: '数据库',
       key: 'db_name',
-      width: 150,
+      width: 180,
       render: (_, record: DataSource) => (
         <Space>
           <DbIcon type={record.type} />
@@ -252,40 +259,15 @@ export default function DataSourcesPage() {
       ),
     },
     {
-      title: '描述',
-      dataIndex: 'description',
-      key: 'description',
-      ellipsis: true,
-    },
-    {
       title: '状态',
       dataIndex: 'status',
       key: 'status',
-      width: 80,
+      width: 100,
       render: (status: number) => (
         <Tag color={status === 1 ? 'green' : 'red'}>
           {status === 1 ? '启用' : '禁用'}
         </Tag>
       ),
-    },
-    {
-      title: '创建时间',
-      dataIndex: 'created_at',
-      key: 'created_at',
-      width: 170,
-      render: (text: string) => {
-        const date = new Date(text);
-        const beijingTime = new Date(date.getTime() + 8 * 60 * 60 * 1000);
-        return beijingTime.toLocaleString('zh-CN', {
-          year: 'numeric',
-          month: '2-digit',
-          day: '2-digit',
-          hour: '2-digit',
-          minute: '2-digit',
-          second: '2-digit',
-          hour12: false,
-        });
-      },
     },
     {
       title: '操作',
@@ -339,10 +321,11 @@ export default function DataSourcesPage() {
           rowKey="id"
           loading={loading}
           pagination={{ pageSize: 10 }}
-          scroll={{ x: 900 }}
+          scroll={{ x: 700 }}
         />
       </Card>
 
+      {/* 新增/编辑数据源弹窗 */}
       <Modal
         title={editingDataSource ? '编辑数据源' : '新增数据源'}
         open={modalVisible}
@@ -441,6 +424,78 @@ export default function DataSourcesPage() {
             </Space>
           </Form.Item>
         </Form>
+      </Modal>
+
+      {/* 数据源详情弹窗 */}
+      <Modal
+        title="数据源详情"
+        open={detailModalVisible}
+        onCancel={() => setDetailModalVisible(false)}
+        footer={[
+          <Button key="close" onClick={() => setDetailModalVisible(false)}>
+            关闭
+          </Button>,
+        ]}
+        width={600}
+      >
+        {selectedDataSource && (
+          <Descriptions bordered column={1}>
+            <Descriptions.Item label="ID">
+              <Space>
+                <span style={{ fontFamily: 'monospace', fontSize: '12px' }}>{selectedDataSource.id}</span>
+                <Button
+                  type="text"
+                  size="small"
+                  icon={<CopyOutlined />}
+                  onClick={() => {
+                    navigator.clipboard.writeText(selectedDataSource.id);
+                    message.success('ID 已复制到剪贴板');
+                  }}
+                />
+              </Space>
+            </Descriptions.Item>
+            <Descriptions.Item label="数据源名称">
+              {selectedDataSource.name}
+            </Descriptions.Item>
+            <Descriptions.Item label="数据源类型">
+              <Space>
+                <DbIcon type={selectedDataSource.type} />
+                <span>{selectedDataSource.type === 'mysql' ? 'MySQL' : 'MongoDB'}</span>
+              </Space>
+            </Descriptions.Item>
+            <Descriptions.Item label="主机地址">
+              {selectedDataSource.host}
+            </Descriptions.Item>
+            <Descriptions.Item label="端口号">
+              {selectedDataSource.port}
+            </Descriptions.Item>
+            <Descriptions.Item label="用户名">
+              {selectedDataSource.username}
+            </Descriptions.Item>
+            <Descriptions.Item label="数据库名称">
+              {selectedDataSource.db_name}
+            </Descriptions.Item>
+            <Descriptions.Item label="描述">
+              {selectedDataSource.description || '-'}
+            </Descriptions.Item>
+            <Descriptions.Item label="状态">
+              <Tag color={selectedDataSource.status === 1 ? 'green' : 'red'}>
+                {selectedDataSource.status === 1 ? '启用' : '禁用'}
+              </Tag>
+            </Descriptions.Item>
+            <Descriptions.Item label="创建时间">
+              {new Date(selectedDataSource.created_at).toLocaleString('zh-CN', {
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                second: '2-digit',
+                hour12: false,
+              })}
+            </Descriptions.Item>
+          </Descriptions>
+        )}
       </Modal>
     </div>
   );
